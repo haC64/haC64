@@ -35,16 +35,11 @@ begin
     s_carry(0)  <= carry;
     n           <= s_output(bit_width-1);
     c           <= s_carry(bit_width);
-    v           <= s_carry(bit_width) xor s_carry(bit_width-1);
-
+    v           <= (a(bit_width-1) or b(bit_width-1)) xor s_output(bit_width-1);
+    z           <= '1' when s_output = x"00" else '0';
     adders:for i in 0 to bit_width-1 generate
-        s_output(i) <= a(i) xor b(i);
+        s_output(i) <= a(i) xor b(i) xor s_carry(i);
         s_carry(i+1)<= (a(i) and b(i)) or (a(i) and s_carry(i)) or (b(i) and
                        s_carry(i));
     end generate;
-
-    psr_proc:process(s_output)
-    begin
-
-    end process;
 end Behavioral;
