@@ -31,7 +31,7 @@ architecture behv of adder_tb is
 
     type vector_array is array (natural range<>) of test_vector;
 
-    constant test_vectors : vector_array := (
+    constant add_vectors : vector_array := (
         -- a    b    cin  n   v   z   c   out
         (x"00",x"FF",'0','1','0','0','0',x"FF"),
         (x"00",x"FF",'1','0','1','1','1',x"00"),
@@ -41,11 +41,21 @@ architecture behv of adder_tb is
         (x"00",x"00",'1','0','0','0','0',x"01"),
         (x"ff",x"ff",'0','1','0','0','1',x"fe"),
         (x"ff",x"ff",'1','1','0','0','1',x"ff")
+    );
 
+    constant sub_vectors : vector_array := (
+        -- a    b    cin  n   v   z   c   out
+        (x"00",x"FF",'0','0','0','0','0',x"00"),
+        (x"00",x"FF",'1','0','1','1','1',x"00"),
+        (x"55",x"aa",'0','1','0','0','0',x"FF"),
+        (x"55",x"aa",'1','0','1','1','1',x"00"),
+        (x"00",x"00",'0','0','0','1','0',x"00"),
+        (x"00",x"00",'1','0','0','0','0',x"01"),
+        (x"ff",x"ff",'0','1','0','0','1',x"fe"),
+        (x"ff",x"ff",'1','1','0','0','1',x"ff")
     );
     constant clk_period : time := 100 ns;
     component adder is
-        generic( bit_width : integer := 8 );
         port(
             a       : in    std_logic_vector(bit_width-1 downto 0);
             b       : in    std_logic_vector(bit_width-1 downto 0);
@@ -56,21 +66,44 @@ architecture behv of adder_tb is
         );
     end component adder;
 
-    signal s_clk,s_carry, s_n,s_v,s_z,s_c  : std_logic;
-    signal s_a,s_b,s_output      : std_logic_vector(bit_width-1 downto 0);
+
+    component sbc is
+        port(
+            a,b     : in    std_logic_vector(bit_width-1 downto 0);
+            output  : out   std_logic_vector(bit_width-1 downto 0);
+            borrow  : in    std_logic;
+            n,v,z,c : out   std_logic
+        );
+    end component sbc;
+
+    signal s_clk,sub_carry,sadd_carry, s_n,s_v,s_z,s_c  : std_logic;
+    signal s_a,s_b,sub_output,sadd_output :
+        std_logic_vector(bit_width-1 downto 0);
 begin
 
 adder_0 : adder
     port map (
         a        => s_a,
         b        => s_b,
-        carry    => s_carry,
-        output   => s_output,
+        carry    => sadd_carry,
+        output   => sadd_output,
         n => s_n,
         v => s_v,
         z => s_z,
         c => s_c
     );
+
+    sbc_0 : sbc
+        port map (
+            a => s_a,
+            b => s_b,
+            output   => sub_output,
+            borrow   => sub_carry,
+            n => s_n,
+            v => s_v,
+            z => s_z,
+            c => s_c
+        );
 
     clk_process:process
     begin
@@ -83,16 +116,38 @@ adder_0 : adder
     stim:process
         variable curr_vector : test_vector;
     begin
-        for i in test_vectors'range loop
+        for i in add_vectors'range loop
             wait until falling_edge(s_clk);
-            curr_vector := test_vectors(i);
+            curr_vector := add_vectors(i);
 
             s_a <= curr_vector.a;
             s_b <= curr_vector.b;
-            s_carry <= curr_vector.carry;
+            sadd_carry <= curr_vector.carry;
 
             wait for clk_period*2;
-            assert s_output = curr_vector.output report "Output for test case "
+            assert sadd_output = curr_vector.output report "Output for test case "
+            & integer'image(i) & " incorrect" severity error;
+            assert s_n = curr_vector.n report integer'image(i)&":n flag wrong"
+                severity error;
+            assert s_v = curr_vector.v report integer'image(i)&":v flag wrong"
+                severity error;
+            assert s_z = curr_vector.z report integer'image(i)&":z flag wrong"
+                severity error;
+            assert s_c = curr_vector.c report integer'image(i)&":c flag wrong"
+                severity error;
+            wait for clk_period;
+        end loop;
+
+        for i in sub_vectors'range loop
+            wait until falling_edge(s_clk);
+            curr_vector := sub_vectors(i);
+
+            s_a <= curr_vector.a;
+            s_b <= curr_vector.b;
+            sub_carry <= curr_vector.carry;
+
+            wait for clk_period*2;
+            assert sub_output = curr_vector.output report "Output for test case "
             & integer'image(i) & " incorrect" severity error;
             assert s_n = curr_vector.n report integer'image(i)&":n flag wrong"
                 severity error;
