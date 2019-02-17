@@ -3,7 +3,7 @@
 --
 --  Entity:        eor
 --  Architecture:  Behavioral
---  Author:        Seth Gower and Paul Kelly
+--  Author:        Paul Kelly
 --  Created:       02/16/19
 --  Modified:      
 --  VHDL'93
