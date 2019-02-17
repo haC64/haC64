@@ -27,7 +27,7 @@ architecture Behavioral of reg is
     -- register storage 
     signal data : std_logic_vector( 7 downto 0) := (others => '0');
 begin
-    process(clk, rst)
+    process(clk, rst) is
     begin
         -- asynchro rst
         if rst = '1' then
