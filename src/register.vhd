@@ -19,7 +19,7 @@ entity reg is
         clk : IN    std_logic;		
         we  : IN    std_logic;		-- write enable
         rst : IN    std_logic;		-- asychro reset
-        O   : OUT   std_logic_vector( 7 downto 0); -- 8 bit output
+        O   : OUT   std_logic_vector( 7 downto 0) -- 8 bit output
     );
 end entity reg;
 
