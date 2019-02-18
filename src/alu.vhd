@@ -91,6 +91,47 @@ architecture Structural of alu is
         );
     end Component;
 
+    component adder is
+        generic( bit_width : integer := 8 );
+        port(
+            a       : in    std_logic_vector(bit_width-1 downto 0);
+            b       : in    std_logic_vector(bit_width-1 downto 0);
+            carry   : in    std_logic;
+
+            output  : out   std_logic_vector(bit_width-1 downto 0);
+            n,v,z,c : out   std_logic
+        );
+    end component adder;
+
+
+    component sbc is
+        generic(bit_width : integer := 8);
+        port(
+            a,b     : in    std_logic_vector(bit_width-1 downto 0);
+            output  : out   std_logic_vector(bit_width-1 downto 0);
+            borrow  : in    std_logic;
+            n,v,z,c : out   std_logic
+        );
+    end component sbc;
+
+    component asl is
+        generic(bit_width : integer := 8);
+        port(
+            input   : in    std_logic_vector(bit_width-1 downto 0);
+            output  : out   std_logic_vector(bit_width-1 downto 0);
+            n,z,c   : out   std_logic
+        );
+    end component asl;
+
+    component and_unit is
+        generic(bit_width : integer := 8);
+        port(
+            a,b     : in    std_logic_vector(bit_width-1 downto 0);
+            output  : out   std_logic_vector(bit_width-1 downto 0);
+            n,z     : out   std_logic
+        );
+    end component and_unit;
+
     -- signals to attach to results of non-included components
     signal adc_res  : std_logic_vector(7 downto 0);
     signal and_res  : std_logic_vector(7 downto 0);
@@ -105,6 +146,7 @@ architecture Structural of alu is
     signal ora_res  : std_logic_vector(7 downto 0);
     signal rol_res  : std_logic_vector(7 downto 0);
     signal ror_res  : std_logic_vector(7 downto 0);
+
 
     signal nvzc_vec: std_logic_vector(3 downto 0);
 begin
@@ -139,6 +181,49 @@ begin
                   c_out => nvzc_vec(0), n => nvzc_vec(3), z => nvzc_vec(1));
 
     -- implement other components here
+
+    and_unit_0 : and_unit
+        port map (
+            a => op1,
+            b => op2,
+            output   => and_res,
+            n => nvzc_vec(3),
+            z => nvzc_vec(1)
+        );
+
+    asl_0 : asl
+        port map (
+            input    => op1,
+            output   => asl_res,
+            n => nvzc_vec(3),
+            z => nvzc_vec(1),
+            c => nvzc_vec(0)
+        );
+
+
+    adder_0 : adder
+        port map (
+            a        => op1,
+            b        => op2,
+            carry    => nvzc_vec(0),
+            output   => adc_res,
+            n => nvzc_vec(3),
+            v => nvzc_vec(2),
+            z => nvzc_vec(1),
+            c => nvzc_vec(0)
+        );
+
+    sbc_0 : sbc
+        port map (
+            a => op1,
+            b => op2,
+            output   => sub_res,
+            borrow   => nvzc_vec(0),
+            n => nvzc_vec(3),
+            v => nvzc_vec(2),
+            z => nvzc_vec(1),
+            c => nvzc_vec(0)
+        );
 
     -- issues: flags are set asynchronously
     process(clk) is
